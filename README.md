@@ -1,4 +1,4 @@
-# Requirements for English Auction NFT
+# Requirements for Dutch Auction NFT
 
 🗳️ Auction
 
