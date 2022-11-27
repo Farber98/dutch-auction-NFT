@@ -10,7 +10,11 @@
 
     4. Participants can buy by depositing ETH greater than the current price computed.
 
-    5. Auction ends when a buyer buys the NFT, refunding excess.
+    5. Auction ends when
+
+        a. Buyer buys the NFT, refunding excess.
+
+        b. Seller closes the auction after duration exceeded, getting back the NFT.
 
 💰 After the auction
 
