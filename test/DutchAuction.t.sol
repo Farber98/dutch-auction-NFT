@@ -35,7 +35,7 @@ contract DutchAuctionTest is Test {
     }
 
     function testStartNotSeller() public {
-        vm.expectRevert("Not seller");
+        vm.expectRevert("Only seller.");
         auction.start();
         vm.stopPrank();
     }
@@ -61,6 +61,73 @@ contract DutchAuctionTest is Test {
         assertEq(auction.startAt(), uint32(block.timestamp));
         assertEq(auction.endAt(), uint32(block.timestamp) + duration);
 
+        vm.stopPrank();
+    }
+
+    function testGetPrice() public {
+        testStartOk();
+        assertEq(auction.getPrice(), 10 ether);
+    }
+
+    function testBuyNotEnough() public {
+        testStartOk();
+        vm.startPrank(buyer2);
+        vm.deal(buyer2, 2 ether);
+        assertEq(buyer2.balance, 2 ether);
+        vm.expectRevert("not enough ETH sent.");
+        auction.buy{value: 1 ether}();
+        vm.stopPrank();
+    }
+
+    function testBuyWithRefund() public {
+        testStartOk();
+        vm.startPrank(buyer2);
+        vm.deal(buyer2, 20 ether);
+        assertEq(buyer2.balance, 20 ether);
+        assertEq(nft.ownerOf(nftId), address(auction));
+        assertEq(seller.balance, 0 ether);
+        auction.buy{value: 20 ether}();
+        assertEq(nft.ownerOf(nftId), buyer2);
+        assertEq(buyer2.balance, 10 ether);
+        assertEq(seller.balance, 10 ether);
+        vm.stopPrank();
+    }
+
+    function testBuyNoRefund() public {
+        testStartOk();
+        vm.startPrank(buyer2);
+        vm.deal(buyer2, 10 ether);
+        assertEq(buyer2.balance, 10 ether);
+        assertEq(nft.ownerOf(nftId), address(auction));
+        assertEq(seller.balance, 0 ether);
+        auction.buy{value: 10 ether}();
+        assertEq(nft.ownerOf(nftId), buyer2);
+        assertEq(buyer2.balance, 0 ether);
+        assertEq(seller.balance, 10 ether);
+        vm.stopPrank();
+    }
+
+    function testCloseNotSeller() public {
+        vm.expectRevert("Only seller.");
+        auction.close();
+    }
+
+    function testCloseNotEnded() public {
+        testStartOk();
+
+        vm.startPrank(seller);
+        vm.expectRevert("Auction not ended.");
+        auction.close();
+        vm.stopPrank();
+    }
+
+    function testCloseOk() public {
+        testStartOk();
+        vm.startPrank(seller);
+        vm.warp(block.timestamp + 8 days);
+        assertEq(nft.ownerOf(nftId), address(auction));
+        auction.close();
+        assertEq(nft.ownerOf(nftId), seller);
         vm.stopPrank();
     }
 }

@@ -18,6 +18,11 @@ contract DutchAuction {
     event Buy(address buyer, uint256 price);
     event Close();
 
+    modifier onlySeller() {
+        require(msg.sender == seller, "Only seller.");
+        _;
+    }
+
     constructor(
         address _nft,
         uint256 _nftId,
@@ -37,8 +42,7 @@ contract DutchAuction {
         duration = _duration;
     }
 
-    function start() external {
-        require(msg.sender == seller, "Not seller");
+    function start() external onlySeller {
         require(startAt == uint32(0) && endAt == uint32(0), "Already started.");
 
         startAt = uint32(block.timestamp);
@@ -73,8 +77,7 @@ contract DutchAuction {
         selfdestruct(seller);
     }
 
-    function close() external payable {
-        require(msg.sender == seller, "Only seller.");
+    function close() external payable onlySeller {
         require(uint32(block.timestamp) >= endAt, "Auction not ended.");
 
         // If auction finished, seller can close it getting back the NFT.
